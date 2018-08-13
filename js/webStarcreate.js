@@ -26,7 +26,7 @@ const
   EARTH_SURF_PRES_IN_PSI = 14.696,     /* Pounds per square inch */
   MMHG_TO_MILLIBARS = EARTH_SURF_PRES_IN_MILLIBARS / EARTH_SURF_PRES_IN_MMHG,
   PSI_TO_MILLIBARS = EARTH_SURF_PRES_IN_MILLIBARS / EARTH_SURF_PRES_IN_PSI,
-  H20_ASSUMED_PRESSURE = 47 * MMHG_TO_MILLIBARS,   /* Dole p. 15 */
+  H20_ASSUMED_PRESSURE = 47 * MMHG_TO_MILLIBARS,   /* Dole, p. 15 */
   MIN_O2_IPP = 72 * MMHG_TO_MILLIBARS,             /* Dole, p. 15 */
   MAX_O2_IPP = 400 * MMHG_TO_MILLIBARS,            /* Dole, p. 15 */
   MAX_HE_IPP = 61000 * MMHG_TO_MILLIBARS,          /* Dole, p. 16 */
@@ -133,59 +133,175 @@ const
   /* covered with clouds in function cloud_fraction in file enviro.c. */
   Q1_36 = 1.258E19, /* grams */
   Q2_36 = 0.0698;   /* 1/Kelvin */
+  
+let breathability_phrase = ["none", "breathable", "unbreathable", "poisonous"];
 
 function pow2(a) {
-  return MATH.pow(a, 2);
+  return Math.pow(a, 2);
 }
   
 function pow3(a) {
-  return MATH.pow(a, 3);
+  return Math.pow(a, 3);
 }
   
 function pow4(a) {
-  return MATH.pow(a, 4);
+  return Math.pow(a, 4);
 }
   
 function pow1_4(a) {
-  return MATH.pow(a, 0.25);
+  return Math.pow(a, 0.25);
 }
   
 function pow1_3(a) {
-  return MATH.pow(a, (1.0/3.0));
+  return Math.pow(a, (1.0/3.0));
 }
 
 /*----------------------------------------------------------------------*/
-/*	This function returns a random real number between the specified    */
-/*  inner and outer bounds.			  					                      	    */
+/*  This function returns a random real number between the specified    */
+/*  inner and outer bounds.                                             */
 /*----------------------------------------------------------------------*/
 
 function random_number(inner, outer)
 {
-	let range;
-	range = outer - inner;
-	return (Math.floor(Math.random() * RAND_MAX) / RAND_MAX) * range + inner;
+  let range;
+  range = outer - inner;
+  return (Math.floor(Math.random() * RAND_MAX) / RAND_MAX) * range + inner;
 }
 
 /*----------------------------------------------------------------------*/
-/*	 This function returns a value within a certain variation of the	  */
-/*	 exact value given it in 'value'.									                  */
+/*   This function returns a value within a certain variation of the    */
+/*   exact value given it in 'value'.                                   */
 /*----------------------------------------------------------------------*/
 
 function about(value, variation)
 {
-	return value + (value * random_number(-variation,variation));
+  return value + (value * random_number(-variation,variation));
 }
 
 function random_eccentricity()
 {
-	let	e;
-	e = 1.0 - Math.pow(Math.random(), ECCENTRICITY_COEFF);
-	if (e > 0.999999999999)	e = 0.999999999999;
-	return e;
+  let  e;
+  e = 1.0 - Math.pow(Math.random(), ECCENTRICITY_COEFF);
+  if (e > 0.999999999999)  e = 0.999999999999;
+  return e;
 }
 
 function chaotic_random_eccentricity()
 {
-	return Math.random();
+  return Math.random();
 }
 
+/*--------------------------------------------------------------------------*/
+/*   This function, given the mass ratio of a star in AU, returns           */
+/*   the luminosity of the star.                                            */
+/*--------------------------------------------------------------------------*/
+
+function luminosity(mass_ratio)
+{
+  let n;
+  if (mass_ratio < 1.0)
+    n = 1.75 * (mass_ratio - 0.1) + 3.325;
+  else
+    n = 0.5 * (2.0 - mass_ratio) + 4.4;
+  return Math.pow(mass_ratio,n);
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function, given the orbital radius of a planet in AU, returns     */
+/*   the orbital 'zone' of the particle.                                    */
+/*--------------------------------------------------------------------------*/
+
+function orb_zone(luminosity, orb_radius)
+{
+  if (orb_radius < (4.0 * Math.sqrt(luminosity)))
+    return(1);
+  else if (orb_radius < (15.0 * Math.sqrt(luminosity)))
+    return(2);
+  else
+    return(3);
+}
+
+/*--------------------------------------------------------------------------*/
+/*   The mass is in units of solar masses, and the density is in units      */
+/*   of grams/cc.  The radius returned is in units of km.                   */
+/*--------------------------------------------------------------------------*/
+
+function volume_radius(mass, density)
+{
+  let volume;
+  mass = mass * SOLAR_MASS_IN_GRAMS;
+  volume = mass / density;
+  return Math.pow((3.0 * volume) / (4.0 * PI), (1.0 / 3.0)) / CM_PER_KM;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   Returns the radius of the planet in kilometers.                        */
+/*   The mass passed in is in units of solar masses.                        */
+/*   This formula is listed as eq.9 in Fogg's article, although some typos  */
+/*   crop up in that eq.  See "The Internal Constitution of Planets", by    */
+/*   Dr. D. S. Kothari, Mon. Not. of the Royal Astronomical Society, vol 96 */
+/*   pp.833-843, 1936 for the derivation.  Specifically, this is Kothari's  */
+/*   eq.23, which appears on page 840.                                      */
+/*--------------------------------------------------------------------------*/
+
+function kothari_radius(mass, giant, zone)
+{
+  let temp1, temp, temp2, atomic_weight, atomic_num;
+  
+  if (zone == 1)
+  {
+    if (giant) {
+      atomic_weight = 9.5;
+      atomic_num = 4.5;
+    } else {
+      atomic_weight = 15.0;
+      atomic_num = 8.0;
+    }
+  } else if (zone == 2)
+    {
+      if (giant) {
+        atomic_weight = 2.47;
+        atomic_num = 2.0;
+      } else {
+        atomic_weight = 10.0;
+        atomic_num = 5.0;
+      }
+    } else{
+      if (giant) {
+        atomic_weight = 7.0;
+        atomic_num = 4.0;
+      } else {
+        atomic_weight = 10.0;
+        atomic_num = 5.0;
+      }
+    }
+  
+  temp1 = atomic_weight * atomic_num;
+  temp = (2.0 * BETA_20 * Math.pow(SOLAR_MASS_IN_GRAMS, (1.0 / 3.0))) / (A1_20 * Math.pow(temp1, (1.0 / 3.0)));
+  temp2 = A2_20 * Math.pow(atomic_weight, (4.0 / 3.0)) * Math.pow(SOLAR_MASS_IN_GRAMS, (2.0 / 3.0));
+  temp2 = temp2 * Math.pow(mass, (2.0 / 3.0));
+  temp2 = temp2 / (A1_20 * pow2(atomic_num));
+  temp2 = 1.0 + temp2;
+  temp = temp / temp2;
+  temp = (temp * Math.pow(mass, (1.0 / 3.0))) / CM_PER_KM;
+  temp /= JIMS_FUDGE; /* Make Earth = actual earth */
+  
+  return(temp);
+}
+
+/*--------------------------------------------------------------------------*/
+/*  The mass passed in is in units of solar masses, and the orbital radius  */
+/*  is in units of AU.  The density is returned in units of grams/cc.       */
+/*--------------------------------------------------------------------------*/
+
+function empirical_density(mass, orb_radius, r_ecosphere, gas_giant)
+{
+  let temp;
+  
+  temp = Math.pow(mass * SUN_MASS_IN_EARTH_MASSES,(1.0 / 8.0));
+  temp = temp * pow1_4(r_ecosphere / orb_radius);
+  if (gas_giant)
+    return(temp * 1.2);
+  else
+    return(temp * 5.5);
+}
