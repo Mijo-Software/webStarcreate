@@ -1,3 +1,5 @@
+"use strict";
+
 const
   RAND_MAX = 2147483647.0,
   PI = 2 * Math.PI,
@@ -159,7 +161,7 @@ function pow1_3(a) {
 
 function random_number(inner, outer)
 {
-	var range;
+	let range;
 	range = outer - inner;
 	return (Math.floor(Math.random() * RAND_MAX) / RAND_MAX) * range + inner;
 }
@@ -176,7 +178,7 @@ function about(value, variation)
 
 function random_eccentricity()
 {
-	var	e;
+	let	e;
 	e = 1.0 - Math.pow(Math.random(), ECCENTRICITY_COEFF);
 	if (e > 0.999999999999)	e = 0.999999999999;
 	return e;
