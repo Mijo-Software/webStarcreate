@@ -177,8 +177,13 @@ function about(value, variation)
 function random_eccentricity()
 {
 	var	e;
-	e = 1.0 - MATH.pow(Math.random(), ECCENTRICITY_COEFF);
-	if (e > 0.99)	e = 0.99;
+	e = 1.0 - Math.pow(Math.random(), ECCENTRICITY_COEFF);
+	if (e > 0.999999999999)	e = 0.999999999999;
 	return e;
+}
+
+function chaotic_random_eccentricity()
+{
+	return Math.random();
 }
 
