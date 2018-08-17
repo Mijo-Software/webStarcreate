@@ -134,7 +134,7 @@ const
 	Q1_36 = 1.258E19, /* grams */
 	Q2_36 = 0.0698;	 /* 1/Kelvin */
 	
-let breathability_phrase = ["none", "breathable", "unbreathable", "poisonous"];
+var breathability_phrase = ["none", "breathable", "unbreathable", "poisonous"];
 
 function pow2(a) {
 	return Math.pow(a, 2);
@@ -163,7 +163,7 @@ function pow1_3(a) {
 
 function random_number(inner, outer)
 {
-	let range;
+	var range;
 	range = outer - inner;
 	return (Math.floor(Math.random() * RAND_MAX) / RAND_MAX) * range + inner;
 }
@@ -180,7 +180,7 @@ function about(value, variation)
 
 function random_eccentricity()
 {
-	let	e;
+	var	e;
 	e = 1.0 - Math.pow(Math.random(), ECCENTRICITY_COEFF);
 	if (e > 0.999999999999)	e = 0.999999999999;
 	return e;
@@ -198,7 +198,7 @@ function chaotic_random_eccentricity()
 
 function luminosity(mass_ratio)
 {
-	let n;
+	var n;
 	if (mass_ratio < 1.0)
 		n = 1.75 * (mass_ratio - 0.1) + 3.325;
 	else
@@ -228,7 +228,7 @@ function orb_zone(luminosity, orb_radius)
 
 function volume_radius(mass, density)
 {
-	let volume;
+	var volume;
 	mass = mass * SOLAR_MASS_IN_GRAMS;
 	volume = mass / density;
 	return Math.pow((3.0 * volume) / (4.0 * PI), (1.0 / 3.0)) / CM_PER_KM;
@@ -246,7 +246,7 @@ function volume_radius(mass, density)
 
 function kothari_radius(mass, giant, zone)
 {
-	let temp1, temp, temp2, atomic_weight, atomic_num;
+	var temp1, temp, temp2, atomic_weight, atomic_num;
 	
 	if (zone == 1) {
 		if (giant) {
@@ -294,7 +294,7 @@ function kothari_radius(mass, giant, zone)
 
 function empirical_density(mass, orb_radius, r_ecosphere, gas_giant)
 {
-	let temp;
+	var temp;
 	
 	temp = Math.pow(mass * SUN_MASS_IN_EARTH_MASSES,(1.0 / 8.0));
 	temp = temp * pow1_4(r_ecosphere / orb_radius);
@@ -311,7 +311,7 @@ function empirical_density(mass, orb_radius, r_ecosphere, gas_giant)
 
 function volume_density(mass, equat_radius)
 {
-	let volume;
+	var volume;
 	
 	mass = mass * SOLAR_MASS_IN_GRAMS;
 	equat_radius = equat_radius * CM_PER_KM;
@@ -327,7 +327,7 @@ function volume_density(mass, equat_radius)
 
 function period(separation, small_mass, large_mass)
 {
-	let period_in_years;
+	var period_in_years;
 	
 	period_in_years = Math.sqrt(pow3(separation) / (small_mass + large_mass));
 	return(period_in_years * DAYS_IN_A_YEAR);
@@ -350,7 +350,7 @@ function period(separation, small_mass, large_mass)
 /*	 The length of the day is returned in units of hours.					          */
 /*--------------------------------------------------------------------------*/
 
-let planet_pointer = {
+var planet_pointer = {
     a: 0, /* semi-major axis of the orbit (in AU)*/
     e: 0, /* eccentricity of the orbit */
     mass: 0, /* mass (in solar masses) */
@@ -382,20 +382,20 @@ let planet_pointer = {
 
 function day_length(planet)
 {
-	let planetary_mass_in_grams = planet.mass * SOLAR_MASS_IN_GRAMS;
-	let	equatorial_radius_in_cm = planet.radius * CM_PER_KM;
-	let	year_in_hours	= planet.orb_period * 24.0;
-	let giant = (planet.type == tGasGiant ||
+	var planetary_mass_in_grams = planet.mass * SOLAR_MASS_IN_GRAMS;
+	var	equatorial_radius_in_cm = planet.radius * CM_PER_KM;
+	var	year_in_hours	= planet.orb_period * 24.0;
+	var giant = (planet.type == tGasGiant ||
 				 planet.type == tSubGasGiant ||
 				 planet.type == tSubSubGasGiant);
-	let	k2;
-	let	base_angular_velocity;
-	let	change_in_angular_velocity;
-	let	ang_velocity;
-	let	spin_resonance_factor;
-	let	day_in_hours;
+	var	k2;
+	var	base_angular_velocity;
+	var	change_in_angular_velocity;
+	var	ang_velocity;
+	var	spin_resonance_factor;
+	var	day_in_hours;
 
-	let stopped = false;
+	var stopped = false;
 
 	planet.resonant_period = false;	/* Warning: Modify the planet */
 
