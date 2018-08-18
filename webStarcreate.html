@@ -17,14 +17,14 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
   </head>
   <body>
-    <nav class="navbar navbar-light bg-light">
+    <nav class="navbar navbar-dark bg-dark">
       <a class="navbar-brand" href="#"><img src="img/sun-32.png" width="32" height="32" class="d-inline-block align-top" alt=""> webStarcreate</a>
     </nav>
     <fieldset>
       <legend>test area</legend>
       <div class="container">
         <div class="row">
-          <div class="col form-control alert-info" role="alert" title="random_number">random_number</div>
+          <div class="col form-control alert-info" role="alert" title="random_number" data-toggle="tooltip" data-placement="top">random_number</div>
           <div class="col form-control alert-dark" role="alert" id="random_number"></div>
         </div>
         <div class="row">
@@ -44,7 +44,37 @@
           <div class="col form-control alert-dark" role="alert" id="luminosity"></div>
         </div>
         <div class="row">
-          <div class="col" title=""><button type="button" class="btn btn-primary btn-lg" onclick="reload();" title="Click to relead">⟳ Reload</button></div>
+          <div class="col form-control alert-info" role="alert" title="orb_zone">orb_zone</div>
+          <div class="col form-control alert-dark" role="alert" id="orb_zone"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="volume_radius">volume_radius</div>
+          <div class="col form-control alert-dark" role="alert" id="volume_radius"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="kothari_radius">kothari_radius</div>
+          <div class="col form-control alert-dark" role="alert" id="kothari_radius"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="empirical_density">empirical_density</div>
+          <div class="col form-control alert-dark" role="alert" id="empirical_density"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="volume_density">volume_density</div>
+          <div class="col form-control alert-dark" role="alert" id="volume_density"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="period">period</div>
+          <div class="col form-control alert-dark" role="alert" id="period"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="day_length">day_length</div>
+          <div class="col form-control alert-dark" role="alert" id="day_length"></div>
+        </div>
+        <div class="row">
+          <div class="col" title="">
+            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="reload();" title="Click to relead">⟳ Reload</button>
+          </div>
         </div>
 
         
@@ -57,11 +87,25 @@
         document.getElementById("chaotic_random_eccentricity").textContent = chaotic_random_eccentricity();
         document.getElementById("random_eccentricity").textContent = random_eccentricity();
         document.getElementById("luminosity").textContent = luminosity(random_number(0, 100));
+        document.getElementById("orb_zone").textContent = orb_zone(random_number(0, 100), random_number(0, 100));
+        document.getElementById("volume_radius").textContent = volume_radius(random_number(0, 100), random_number(0, 10));
+        document.getElementById("kothari_radius").textContent = kothari_radius(random_number(0, 100), Boolean(Number(Math.round(random_number(0, 1)))), Math.round(random_number(1, 3)));
+        document.getElementById("empirical_density").textContent = empirical_density(random_number(0, 10), random_number(0, 10), random_number(0, 1), Boolean(Number(Math.round(random_number(0, 1)))));
+        document.getElementById("volume_density").textContent = volume_density(random_number(0, 10), random_number(0, 1000000));
+        document.getElementById("period").textContent = period(random_number(0, 10), random_number(0, 5), random_number(5, 10));
+        document.getElementById("day_length").textContent = "not tested";
         console.log(document.getElementById("random_number").textContent);
         console.log(document.getElementById("about").textContent);
         console.log(document.getElementById("chaotic_random_eccentricity").textContent);
         console.log(document.getElementById("random_eccentricity").textContent);
         console.log(document.getElementById("luminosity").textContent);
+        console.log(document.getElementById("orb_zone").textContent);
+        console.log(document.getElementById("volume_radius").textContent);
+        console.log(document.getElementById("kothari_radius").textContent);
+        console.log(document.getElementById("empirical_density").textContent);
+        console.log(document.getElementById("volume_density").textContent);
+        console.log(document.getElementById("period").textContent);
+        console.log(document.getElementById("day_length").textContent);
       }
       reload();
     </script>
