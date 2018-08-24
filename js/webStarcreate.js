@@ -180,9 +180,9 @@ function about(value, variation)
 
 function random_eccentricity()
 {
-  let  e;
+  let e;
   e = 1.0 - Math.pow(Math.random(), ECCENTRICITY_COEFF);
-  if (e > 0.999999999999)  e = 0.999999999999;
+  if (e > 0.999999999999) e = 0.999999999999;
   return e;
 }
 
@@ -404,20 +404,13 @@ function day_length(planet)
   else
     k2 = 0.33;
 
-  base_angular_velocity = Math.sqrt(2.0 * J * (planetary_mass_in_grams) /
-                 (k2 * pow2(equatorial_radius_in_cm)));
+  base_angular_velocity = Math.sqrt(2.0 * J * (planetary_mass_in_grams) / (k2 * pow2(equatorial_radius_in_cm)));
 
  /*  This next calculation determines how much the planet's rotation is   */
  /*  slowed by the presence of the star.                                  */
 
-  change_in_angular_velocity = CHANGE_IN_EARTH_ANG_VEL *
-                 (planet.density / EARTH_DENSITY) *
-                 (equatorial_radius_in_cm / EARTH_RADIUS) *
-                 (EARTH_MASS_IN_GRAMS / planetary_mass_in_grams) *
-                 Math.pow(planet.primary.mass, 2.0) *
-                 (1.0 / Math.pow(planet.a, 6.0));
-  ang_velocity = base_angular_velocity + (change_in_angular_velocity *
-                      planet.primary.age);
+  change_in_angular_velocity = CHANGE_IN_EARTH_ANG_VEL * (planet.density / EARTH_DENSITY) * (equatorial_radius_in_cm / EARTH_RADIUS) * (EARTH_MASS_IN_GRAMS / planetary_mass_in_grams) * Math.pow(planet.primary.mass, 2.0) * (1.0 / Math.pow(planet.a, 6.0));
+  ang_velocity = base_angular_velocity + (change_in_angular_velocity * planet.primary.age);
 
   /* Now we change from rad/sec to hours/rotation. */
 
@@ -435,9 +428,647 @@ function day_length(planet)
     {
       spin_resonance_factor   = (1.0 - planet.e) / (1.0 + planet.e);
       planet.resonant_period   = false;
-      return(spin_resonance_factor * year_in_hours);
+      return spin_resonance_factor * year_in_hours;
     }
-    else return(year_in_hours);
+    else return year_in_hours;
   }
-  return(day_in_hours);
+  return day_in_hours;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   The orbital radius is expected in units of Astronomical Units (AU).    */
+/*   Inclination is returned in units of degrees.                           */
+/*--------------------------------------------------------------------------*/
+
+function inclination(orb_radius)
+{
+  let temp = Math.trunc(Math.pow(orb_radius, 0.2) * about(EARTH_AXIAL_TILT, 0.4));
+  return temp % 360;
+}
+
+function inclination_with_fraction(orb_radius)
+{
+  let temp, fraction;
+  temp = Math.pow(orb_radius, 0.2) * about(EARTH_AXIAL_TILT, 0.4);
+  fraction = temp - Math.trunc(temp);
+  temp = Math.trunc(temp);
+  temp = (temp % 360) + fraction;
+  return temp;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function implements the escape velocity calculation. Note that    */
+/*  it appears that Fogg's eq.15 is incorrect.                              */
+/*  The mass is in units of solar mass, the radius in kilometers, and the   */
+/*  velocity returned is in cm/sec.                                         */
+/*--------------------------------------------------------------------------*/
+
+function escape_vel(mass, radius)
+{
+  let
+    mass_in_grams = mass * SOLAR_MASS_IN_GRAMS,
+    radius_in_cm = radius * CM_PER_KM;
+  return Math.sqrt(2.0 * GRAV_CONSTANT * mass_in_grams / radius_in_cm);
+}
+
+/*--------------------------------------------------------------------------*/
+/*  This is Fogg's eq.16.  The molecular weight (usually assumed to be N2)  */
+/*  is used as the basis of the Root Mean Square (RMS) velocity of the      */
+/*  molecule or atom.  The velocity returned is in cm/sec.                  */
+/*  Orbital radius is in A.U.(ie: in units of the earth's orbital radius).  */
+/*--------------------------------------------------------------------------*/
+
+function rms_vel(molecular_weight, exospheric_temp)
+{
+  return Math.sqrt((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight) * CM_PER_METER;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function returns the smallest molecular weight retained by the    */
+/*  body, which is useful for determining the atmosphere composition.       */
+/*  Mass is in units of solar masses, and equatorial radius is in units of  */
+/*  kilometers.                                                             */
+/*--------------------------------------------------------------------------*/
+
+function molecule_limit(mass, equat_radius, exospheric_temp)
+{
+  let esc_velocity = escape_vel(mass, equat_radius);
+  
+  return (3.0 * MOLAR_GAS_CONST * exospheric_temp) / (pow2((esc_velocity/ GAS_RETENTION_THRESHOLD) / CM_PER_METER));
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function calculates the surface acceleration of a planet.   The   */
+/*  mass is in units of solar masses, the radius in terms of km, and the    */
+/*  acceleration is returned in units of cm/sec2.                           */
+/*--------------------------------------------------------------------------*/
+
+function acceleration(mass, radius)
+{
+  return GRAV_CONSTANT * (mass * SOLAR_MASS_IN_GRAMS) / pow2(radius * CM_PER_KM);
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function calculates the surface gravity of a planet.  The         */
+/*  acceleration is in units of cm/sec2, and the gravity is returned in     */
+/*  units of Earth gravities.                                               */
+/*--------------------------------------------------------------------------*/
+
+function gravity(acceleration)
+{
+  return acceleration / EARTH_ACCELERATION;
+}
+
+/*--------------------------------------------------------------------------*/
+/*  This implements Fogg's eq.17.  The 'inventory' returned is unitless.    */
+/*--------------------------------------------------------------------------*/
+
+function vol_inventory(mass, escape_vel, rms_vel, stellar_mass, zone, greenhouse_effect, accreted_gas)
+{
+  let velocity_ratio, proportion_const, temp1, temp2, earth_units;
+  
+  velocity_ratio = escape_vel / rms_vel;
+  if (velocity_ratio >= GAS_RETENTION_THRESHOLD) {
+    switch (zone) {
+      case 1:
+        proportion_const = 140000.0;  /* 100 . 140 JLB */
+        break;
+      case 2:
+        proportion_const = 75000.0;
+        break;
+      case 3:
+        proportion_const = 250.0;
+        break;
+      default:
+        proportion_const = 0.0;
+        console.log("Error: orbital zone not initialized correctly!");
+        return "Error: orbital zone not initialized correctly!";
+    }
+    earth_units = mass * SUN_MASS_IN_EARTH_MASSES;
+    temp1 = (proportion_const * earth_units) / stellar_mass;
+    temp2 = about(temp1, 0.2);
+    temp2 = temp1;
+    if (greenhouse_effect || accreted_gas)
+      return temp2;
+    else
+      return temp2 / 140.0;  /* 100 . 140 JLB */
+  }
+  else
+    return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+/*  This implements Fogg's eq.18.  The pressure returned is in units of      */
+/*  millibars (mb).   The gravity is in units of Earth gravities, the radius */
+/*  in units of kilometers.                                                  */
+/*                                                                           */
+/*  JLB: Aparently this assumed that earth pressure = 1000mb. I've added a   */
+/*  fudge factor (EARTH_SURF_PRES_IN_MILLIBARS / 1000.) to correct for that  */
+/*---------------------------------------------------------------------------*/
+
+function pressure(volatile_gas_inventory, equat_radius, gravity)
+{
+  equat_radius = KM_EARTH_RADIUS / equat_radius;
+  return volatile_gas_inventory * gravity * (EARTH_SURF_PRES_IN_MILLIBARS / 1000) / pow2(equat_radius);
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function returns the boiling point of water in an atmosphere of   */
+/*   pressure 'surf_pressure', given in millibars.  The boiling point is    */
+/*   returned in units of Kelvin.  This is Fogg's eq.21.                    */
+/*--------------------------------------------------------------------------*/
+
+function boiling_point(surf_pressure)
+{
+  let surface_pressure_in_bars;
+  
+  surface_pressure_in_bars = surf_pressure / MILLIBARS_PER_BAR;
+  return 1.0 / ((Math.log(surface_pressure_in_bars) / -5050.5) + (1.0 / 373.0));
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function is Fogg's eq.22.   Given the volatile gas inventory and  */
+/*   planetary radius of a planet (in Km), this function returns the        */
+/*   fraction of the planet covered with water.                             */
+/*   I have changed the function very slightly:   the fraction of Earth's   */
+/*   surface covered by water is 71%, not 75% as Fogg used.                 */
+/*--------------------------------------------------------------------------*/
+
+function hydro_fraction(volatile_gas_inventory, planet_radius)
+{
+  let temp;
+  temp = (0.71 * volatile_gas_inventory / 1000) * pow2(KM_EARTH_RADIUS / planet_radius);
+  if (temp >= 1.0)
+    return 1.0;
+  else
+    return temp;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   Given the surface temperature of a planet (in Kelvin), this function   */
+/*   returns the fraction of cloud cover available.   This is Fogg's eq.23. */
+/*   See Hart in "Icarus" (vol 33, pp23 - 39, 1978) for an explanation.     */
+/*   This equation is Hart's eq.3.                                          */
+/*   I have modified it slightly using constants and relationships from     */
+/*   Glass's book "Introduction to Planetary Geology", p.46.                */
+/*   The 'CLOUD_COVERAGE_FACTOR' is the amount of surface area on Earth     */
+/*   covered by one Kg. of cloud.                                           */
+/*--------------------------------------------------------------------------*/
+
+function cloud_fraction(surf_temp, smallest_MW_retained, equat_radius, hydro_fraction)
+{
+  let water_vapor_in_kg, fraction, surf_area, hydro_mass;
+  
+  if (smallest_MW_retained > WATER_VAPOR) return 0; else
+  {
+    surf_area = 4.0 * PI * pow2(equat_radius);
+    hydro_mass = hydro_fraction * surf_area * EARTH_WATER_MASS_PER_AREA;
+    water_vapor_in_kg = (0.00000001 * hydro_mass) * Math.exp(Q2_36 * (surf_temp - EARTH_AVERAGE_KELVIN));
+    fraction = CLOUD_COVERAGE_FACTOR * water_vapor_in_kg / surf_area;
+    if (fraction >= 1.0)
+      return 1;
+    else
+      return fraction;
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*   Given the surface temperature of a planet (in Kelvin), this function   */
+/*   returns the fraction of the planet's surface covered by ice.  This is  */
+/*   Fogg's eq.24.  See Hart[24] in Icarus vol.33, p.28 for an explanation. */
+/*   I have changed a constant from 70 to 90 in order to bring it more in   */
+/*   line with the fraction of the Earth's surface covered with ice, which  */
+/*   is approximatly .016 (=1.6%).                                          */
+/*--------------------------------------------------------------------------*/
+
+function ice_fraction(hydro_fraction, surf_temp)
+{
+  let temp;
+  
+  if (surf_temp > 328.0)surf_temp = 328.0;
+  temp = Math.pow(((328.0 - surf_temp) / 90.0), 5.0);
+  if (temp > (1.5 * hydro_fraction)) temp = (1.5 * hydro_fraction);
+  if (temp >= 1.0)
+    return 1;
+  else
+    return temp;
+}
+
+/*--------------------------------------------------------------------------*/
+/*  This is Fogg's eq.19.  The ecosphere radius is given in AU, the orbital */
+/*  radius in AU, and the temperature returned is in Kelvin.                */
+/*--------------------------------------------------------------------------*/
+
+function eff_temp(ecosphere_radius, orb_radius, albedo)
+{
+  return Math.sqrt(ecosphere_radius / orb_radius) * pow1_4((1.0 - albedo) / (1.0 - EARTH_ALBEDO)) * EARTH_EFFECTIVE_TEMP;
+}
+
+function est_temp(ecosphere_radius, orb_radius, albedo)
+{
+  return Math.sqrt(ecosphere_radius / orb_radius) * pow1_4((1.0 - albedo) / (1.0 - EARTH_ALBEDO)) * EARTH_AVERAGE_KELVIN;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Old grnhouse:                                                            */
+/*  Note that if the orbital radius of the planet is greater than or equal  */
+/*  to R_inner, 99% of it's volatiles are assumed to have been deposited in */
+/*  surface reservoirs (otherwise, it suffers from the greenhouse effect).  */
+/*--------------------------------------------------------------------------*/
+/*  if ((orb_radius < r_greenhouse) && (zone == 1))                         */
+/*--------------------------------------------------------------------------*/
+/*  The new definition is based on the inital surface temperature and what  */
+/*  state water is in. If it's too hot, the water will never condense out   */
+/*  of the atmosphere, rain down and form an ocean. The albedo used here    */
+/*  was chosen so that the boundary is about the same as the old method     */
+/*  Neither zone, nor r_greenhouse are used in this version        JLB      */
+/*--------------------------------------------------------------------------*/
+
+function grnhouse(r_ecosphere, orb_radius)
+{
+  let temp = eff_temp(r_ecosphere, orb_radius, GREENHOUSE_TRIGGER_ALBEDO);
+  if (temp > FREEZING_POINT_OF_WATER)
+    return true;
+  else
+    return false;
+}
+
+/*--------------------------------------------------------------------------*/
+/*  This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of     */
+/*  Earth's Atmosphere" article.  The effective temperature given is in     */
+/*  units of Kelvin, as is the rise in temperature produced by the          */
+/*  greenhouse effect, which is returned.                                   */
+/*  I tuned this by changing a pow(x,.25) to pow(x,.4) to match Venus - JLB */
+/*--------------------------------------------------------------------------*/
+
+function green_rise(optical_depth, effective_temp, surf_pressure)
+{
+  let convection_factor = EARTH_CONVECTION_FACTOR * Math.pow(surf_pressure / EARTH_SURF_PRES_IN_MILLIBARS, 0.4);
+  let rise = (pow1_4(1.0 + 0.75 * optical_depth) - 1.0) * effective_temp * convection_factor;
+  if (rise < 0.0) rise = 0.0;
+  return rise;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   The surface temperature passed in is in units of Kelvin.               */
+/*   The cloud adjustment is the fraction of cloud cover obscuring each     */
+/*   of the three major components of albedo that lie below the clouds.     */
+/*--------------------------------------------------------------------------*/
+
+function planet_albedo(water_fraction, cloud_fraction, ice_fraction, surf_pressure)
+{
+  let rock_fraction, cloud_adjustment, components, cloud_part, rock_part, water_part, ice_part;
+  
+  rock_fraction = 1.0 - water_fraction - ice_fraction;
+  components = 0.0;
+  if (water_fraction > 0.0) components = components + 1.0;
+  if (ice_fraction > 0.0) components = components + 1.0;
+  if (rock_fraction > 0.0) components = components + 1.0;
+  
+  cloud_adjustment = cloud_fraction / components;
+  
+  if (rock_fraction >= cloud_adjustment)
+    rock_fraction = rock_fraction - cloud_adjustment;
+  else
+    rock_fraction = 0.0;
+  
+  if (water_fraction > cloud_adjustment)
+    water_fraction = water_fraction - cloud_adjustment;
+  else
+    water_fraction = 0.0;
+    
+  if (ice_fraction > cloud_adjustment)
+    ice_fraction = ice_fraction - cloud_adjustment;
+  else
+    ice_fraction = 0.0;
+    
+  cloud_part = cloud_fraction * CLOUD_ALBEDO;    /* about(...,0.2); */
+  
+  if (surf_pressure === 0.0)
+  {
+    rock_part = rock_fraction * ROCKY_AIRLESS_ALBEDO;  /* about(...,0.3); */
+    ice_part = ice_fraction * AIRLESS_ICE_ALBEDO;    /* about(...,0.4); */
+    water_part = 0;
+  } else {
+    rock_part = rock_fraction * ROCKY_ALBEDO;  /* about(...,0.1); */
+    water_part = water_fraction * WATER_ALBEDO;  /* about(...,0.2); */
+    ice_part = ice_fraction * ICE_ALBEDO;    /* about(...,0.1); */
+  }
+
+  return cloud_part + rock_part + water_part + ice_part;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function returns the dimensionless quantity of optical depth,     */
+/*   which is useful in determining the amount of greenhouse effect on a    */
+/*   planet.                                                                */
+/*--------------------------------------------------------------------------*/
+
+function opacity(molecular_weight, surf_pressure)
+{
+  let optical_depth;
+  
+  optical_depth = 0.0;
+  if ((molecular_weight >= 0.0) && (molecular_weight < 10.0)) optical_depth = optical_depth + 3.0;
+  if ((molecular_weight >= 10.0) && (molecular_weight < 20.0)) optical_depth = optical_depth + 2.34;
+  if ((molecular_weight >= 20.0) && (molecular_weight < 30.0)) optical_depth = optical_depth + 1.0;
+  if ((molecular_weight >= 30.0) && (molecular_weight < 45.0)) optical_depth = optical_depth + 0.15;
+  if ((molecular_weight >= 45.0) && (molecular_weight < 100.0)) optical_depth = optical_depth + 0.05;
+
+  if (surf_pressure >= (70.0 * EARTH_SURF_PRES_IN_MILLIBARS))
+    optical_depth = optical_depth * 8.333;
+  else if (surf_pressure >= (50.0 * EARTH_SURF_PRES_IN_MILLIBARS))
+    optical_depth = optical_depth * 6.666;
+  else if (surf_pressure >= (30.0 * EARTH_SURF_PRES_IN_MILLIBARS))
+    optical_depth = optical_depth * 3.333;
+  else if (surf_pressure >= (10.0 * EARTH_SURF_PRES_IN_MILLIBARS))
+    optical_depth = optical_depth * 2.0;
+  else if (surf_pressure >= (5.0 * EARTH_SURF_PRES_IN_MILLIBARS))
+    optical_depth = optical_depth * 1.5;
+
+  return optical_depth;
+}
+
+/*
+ *  calculates the number of years it takes for 1/e of a gas to escape
+ *  from a planet's atmosphere.
+ *  Taken from Dole p. 34. He cites Jeans (1916) & Jones (1923)
+ */
+ 
+function gas_life(molecular_weight, planet)
+{
+  let v = rms_vel(molecular_weight, planet.exospheric_temp);
+  let g = planet.surf_grav * EARTH_ACCELERATION;
+  let r = planet.radius * CM_PER_KM;
+  let t = (pow3(v) / (2.0 * pow2(g) * r)) * Math.exp((3.0 * g * r) / pow2(v));
+  let years = t / (SECONDS_PER_HOUR * 24.0 * DAYS_IN_A_YEAR);
+  
+//  long double ve = planet.esc_velocity;
+//  long double k = 2;
+//  long double t2 = ((k * pow3(v) * r) / pow4(ve)) * exp((3.0 * pow2(ve)) / (2.0 * pow2(v)));
+//  long double years2 = t2 / (SECONDS_PER_HOUR * 24.0 * DAYS_IN_A_YEAR);
+//  if (flag_verbose & 0x0040)
+//    fprintf (stderr, "gas_life: %LGs, V ratio: %Lf\n",
+//        years, ve / v);
+
+  if (years > 2.0E10) years = INCREDIBLY_LARGE_NUMBER;
+
+  return years;
+}
+
+function min_molec_weight(planet)
+{
+  let
+    mass    = planet.mass,
+    radius  = planet.radius,
+    temp    = planet.exospheric_temp,
+    target  = 5.0E9,
+    guess_1 = molecule_limit(mass, radius, temp),
+    guess_2 = guess_1,
+    life    = gas_life(guess_1, planet),
+    loops   = 0;
+  
+  if (null !== planet.primary) {
+    target = planet.primary.age;
+  }
+
+  if (life > target) {
+    while ((life > target) && (loops++ < 25)) {
+      guess_1 = guess_1 / 2.0;
+      life   = gas_life(guess_1, planet);
+    }
+  } else {
+    while ((life < target) && (loops++ < 25)) {
+      guess_2 = guess_2 * 2.0;
+      life   = gas_life(guess_2, planet);
+    }
+  }
+
+  loops = 0;
+
+  while (((guess_2 - guess_1) > 0.1) && (loops++ < 25)) {
+    let guess_3 = (guess_1 + guess_2) / 2.0;
+    life = gas_life(guess_3, planet);
+
+    if (life < target)
+      guess_1 = guess_3;
+    else
+      guess_2 = guess_3;
+  }
+  
+  life = gas_life(guess_2, planet);
+
+  return guess_2;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   The temperature calculated is in degrees Kelvin.                       */
+/*   Quantities already known which are used in these calculations:         */
+/*     planet.molec_weight                                                  */
+/*     planet.surf_pressure                                                 */
+/*     R_ecosphere                                                          */
+/*     planet.a                                                             */
+/*     planet.volatile_gas_inventory                                        */
+/*     planet.radius                                                        */
+/*     planet.boil_point                                                    */
+/*--------------------------------------------------------------------------*/
+
+function calculate_surface_temp(planet, first, last_water, last_clouds, last_ice, last_temp, last_albedo)
+{
+  let
+    effective_temp,
+    water_raw,
+    clouds_raw,
+    greenhouse_temp,
+    boil_off = false;
+
+  if (first) {
+    planet.albedo = EARTH_ALBEDO;
+    effective_temp = eff_temp(planet.primary.r_ecosphere, planet.a, planet.albedo);
+    greenhouse_temp = green_rise(opacity(planet.molec_weight, planet.surf_pressure), effective_temp, planet.surf_pressure);
+    planet.surf_temp   = effective_temp + greenhouse_temp;
+    set_temp_range(planet);
+  }
+  
+  if (planet.greenhouse_effect && planet.max_temp < planet.boil_point) {
+    /*if (flag_verbose & 0x0010)
+      fprintf (stderr, "Deluge: %s %d max (%Lf) < boil (%Lf)\n",
+          planet.primary.name,
+          planet.planet_no,
+          planet.max_temp,
+          planet.boil_point);*/
+    planet.greenhouse_effect = 0;
+    planet.volatile_gas_inventory = vol_inventory(planet.mass, planet.esc_velocity, planet.rms_velocity, planet.primary.mass, planet.orbit_zone, planet.greenhouse_effect, (planet.gas_mass / planet.mass) > 0.000001);
+    planet.surf_pressure = pressure(planet.volatile_gas_inventory, planet.radius, planet.surf_grav);
+    planet.boil_point = boiling_point(planet.surf_pressure);
+  }
+
+  water_raw = planet.hydrosphere = hydro_fraction(planet.volatile_gas_inventory, planet.radius);
+  clouds_raw = planet.cloud_cover = cloud_fraction(planet.surf_temp, planet.molec_weight, planet.radius, planet.hydrosphere);
+  planet.ice_cover = ice_fraction(planet.hydrosphere, planet.surf_temp);
+  
+  if ((planet.greenhouse_effect) && (planet.surf_pressure > 0.0)) planet.cloud_cover = 1.0;
+  
+  if ((planet.high_temp >= planet.boil_point) && (!first) && !(Math.trunc(planet.day) == Math.trunc(planet.orb_period * 24.0) || (planet.resonant_period))) {
+    planet.hydrosphere  = 0.0;
+    boil_off = true;
+    if (planet.molec_weight > WATER_VAPOR)
+      planet.cloud_cover = 0.0;
+    else
+      planet.cloud_cover = 1.0;
+  }
+
+  if (planet.surf_temp < (FREEZING_POINT_OF_WATER - 3.0)) planet.hydrosphere= 0.0;
+  
+  planet.albedo = planet_albedo(planet.hydrosphere, planet.cloud_cover, planet.ice_cover, planet.surf_pressure);
+  
+  effective_temp = eff_temp(planet.primary.r_ecosphere, planet.a, planet.albedo);
+  greenhouse_temp = green_rise(opacity(planet.molec_weight, planet.surf_pressure), effective_temp, planet.surf_pressure);
+  planet.surf_temp = effective_temp + greenhouse_temp;
+
+  if (!first) {
+    if (!boil_off) planet.hydrosphere = (planet.hydrosphere + (last_water * 2)) / 3;
+    planet.cloud_cover = (planet.cloud_cover + (last_clouds * 2)) / 3;
+    planet.ice_cover = (planet.ice_cover + (last_ice * 2)) / 3;
+    planet.albedo = (planet.albedo + (last_albedo * 2)) / 3;
+    planet.surf_temp = (planet.surf_temp + (last_temp * 2)) / 3;
+  }
+
+  set_temp_range(planet);
+
+  /*if (flag_verbose & 0x0020)
+    fprintf (stderr, "%5.1Lf AU: %5.1Lf = %5.1Lf ef + %5.1Lf gh%c "
+        "(W: %4.2Lf (%4.2Lf) C: %4.2Lf (%4.2Lf) I: %4.2Lf A: (%4.2Lf))\n",
+        planet.a,
+        planet.surf_temp - FREEZING_POINT_OF_WATER,
+        effective_temp - FREEZING_POINT_OF_WATER,
+        greenhouse_temp,
+        (planet.greenhouse_effect) ? '*' :' ',
+        planet.hydrosphere, water_raw,
+        planet.cloud_cover, clouds_raw,
+        planet.ice_cover,
+        planet.albedo);*/
+}
+
+function iterate_surface_temp(planet)
+{
+  let
+    count = 0,
+    initial_temp = est_temp(planet.primary.r_ecosphere, planet.a, planet.albedo),
+    h2o_life = gas_life (WATER_VAPOR, planet),
+    h2_life = gas_life (MOL_HYDROGEN, planet),
+    n2_life = gas_life (MOL_NITROGEN, planet),
+    n_life = gas_life (ATOMIC_NITROGEN, planet);
+  
+  /*if (flag_verbose & 0x0040)
+    fprintf (stderr, "\nGas lifetimes: H2 - %Lf, H2O - %Lf, N - %Lf, N2 - %Lf\n",
+        h2_life, h2o_life, n_life, n2_life);*/
+
+  calculate_surface_temp(planet, true, 0, 0, 0, 0, 0);
+
+  for (count = 0; count <= 25; count++) {
+    let
+      last_water = planet.hydrosphere,
+      last_clouds = planet.cloud_cover,
+      last_ice = planet.ice_cover,
+      last_temp = planet.surf_temp,
+      last_albedo = planet.albedo;
+  
+    calculate_surface_temp(planet, false, last_water, last_clouds, last_ice, last_temp, last_albedo);
+    
+    if (Math.abs(planet.surf_temp - last_temp) < 0.25) break;
+  }
+  
+  planet.greenhs_rise = planet.surf_temp - initial_temp;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   Inspired partial pressure, taking into account humidification of the   */
+/*   air in the nasal passage and throat This formula is on Dole's p. 14    */
+/*--------------------------------------------------------------------------*/
+
+function inspired_partial_pressure(surf_pressure, gas_pressure)
+{
+  let
+    pH2O = H20_ASSUMED_PRESSURE,
+    fraction = gas_pressure / surf_pressure;
+    
+  return (surf_pressure - pH2O) * fraction;
+}
+
+/*--------------------------------------------------------------------------*/
+/*   This function uses figures on the maximum inspired partial pressures   */
+/*   of Oxygen, other atmospheric and traces gases as laid out on pages 15, */
+/*   16 and 18 of Dole's Habitable Planets for Man to derive breathability  */
+/*   of the planet's atmosphere.                                       JLB  */
+/*--------------------------------------------------------------------------*/
+
+function breathability(planet)
+{
+  let
+    oxygen_ok = false,
+    index;
+
+  if (planet.gases === 0) return NONE;
+  
+  for(index = 0; index < planet.gases; index++)
+  {
+    let n;
+    let gas_no = 0;
+    
+    let ipp = inspired_partial_pressure (planet.surf_pressure, planet.atmosphere[index].surf_pressure);
+    
+    for (n = 0; n < max_gas; n++) {
+      if (gases[n].num == planet.atmosphere[index].num) gas_no = n;
+    }
+
+    if (ipp > gases[gas_no].max_ipp)
+      return POISONOUS;
+      
+    if (planet.atmosphere[index].num == AN_O) oxygen_ok = ((ipp >= MIN_O2_IPP) && (ipp <= MAX_O2_IPP));
+  }
+  
+  if (oxygen_ok)
+    return BREATHABLE;
+  else
+    return UNBREATHABLE;
+}
+
+/* function for 'soft limiting' temperatures */
+
+function lim(x)
+{
+  return x / Math.sqrt(Math.sqrt(1 + x*x*x*x));
+}
+
+function soft(v, max, min)
+{
+  let dv = v - min;
+  let dm = max - min;
+  return (lim(2*dv/dm-1)+1)/2 * dm + min;
+}
+
+function set_temp_range(planet)
+{
+  let
+    pressmod = 1 / Math.sqrt(1 + 20 * planet.surf_pressure / 1000.0),
+    ppmod    = 1 / Math.sqrt(10 + 5 * planet.surf_pressure / 1000.0),
+    tiltmod  = Math.abs(Math.cos(planet.axial_tilt * PI/180) * Math.pow(1 + planet.e, 2)),
+    daymod   = 1 / (200 / planet.day + 1),
+    mh = Math.pow(1 + daymod, pressmod),
+    ml = Math.pow(1 - daymod, pressmod),
+    hi = mh * planet.surf_temp,
+    lo = ml * planet.surf_temp,
+    sh = hi + Math.pow((100+hi) * tiltmod, Math.sqrt(ppmod)),
+    wl = lo - Math.pow((150+lo) * tiltmod, Math.sqrt(ppmod)),
+    max = planet.surf_temp + Math.sqrt(planet.surf_temp) * 10,
+    min = planet.surf_temp / Math.sqrt(planet.day + 24);
+
+  if (lo < min) lo = min;
+  if (wl < 0)   wl = 0;
+
+  planet.high_temp = soft(hi, max, min);
+  planet.low_temp  = soft(lo, max, min);
+  planet.max_temp  = soft(sh, max, min);
+  planet.min_temp  = soft(wl, max, min);
 }
