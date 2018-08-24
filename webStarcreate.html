@@ -72,12 +72,102 @@
           <div class="col form-control alert-dark" role="alert" id="day_length"></div>
         </div>
         <div class="row">
+          <div class="col form-control alert-info" role="alert" title="inclination">inclination</div>
+          <div class="col form-control alert-dark" role="alert" id="inclination"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="inclination_with_fraction">inclination_with_fraction</div>
+          <div class="col form-control alert-dark" role="alert" id="inclination_with_fraction"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="escape_vel">escape_vel</div>
+          <div class="col form-control alert-dark" role="alert" id="escape_vel"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="rms_vel">rms_vel</div>
+          <div class="col form-control alert-dark" role="alert" id="rms_vel"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="molecule_limit">molecule_limit</div>
+          <div class="col form-control alert-dark" role="alert" id="molecule_limit"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="acceleration">acceleration</div>
+          <div class="col form-control alert-dark" role="alert" id="acceleration"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="gravity">gravity</div>
+          <div class="col form-control alert-dark" role="alert" id="gravity"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="vol_inventory">vol_inventory</div>
+          <div class="col form-control alert-dark" role="alert" id="vol_inventory"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="pressure">pressure</div>
+          <div class="col form-control alert-dark" role="alert" id="pressure"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="boiling_point">boiling_point</div>
+          <div class="col form-control alert-dark" role="alert" id="boiling_point"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="hydro_fraction">hydro_fraction</div>
+          <div class="col form-control alert-dark" role="alert" id="hydro_fraction"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="cloud_fraction">cloud_fraction</div>
+          <div class="col form-control alert-dark" role="alert" id="cloud_fraction"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="ice_fraction">ice_fraction</div>
+          <div class="col form-control alert-dark" role="alert" id="ice_fraction"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="eff_temp">eff_temp</div>
+          <div class="col form-control alert-dark" role="alert" id="eff_temp"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="est_temp">est_temp</div>
+          <div class="col form-control alert-dark" role="alert" id="est_temp"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="grnhouse">grnhouse</div>
+          <div class="col form-control alert-dark" role="alert" id="grnhouse"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="green_rise">green_rise</div>
+          <div class="col form-control alert-dark" role="alert" id="green_rise"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="planet_albedo">planet_albedo</div>
+          <div class="col form-control alert-dark" role="alert" id="planet_albedo"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="opacity">opacity</div>
+          <div class="col form-control alert-dark" role="alert" id="opacity"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="gas_life">gas_life</div>
+          <div class="col form-control alert-dark" role="alert" id="gas_life"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="min_molec_weight">min_molec_weight</div>
+          <div class="col form-control alert-dark" role="alert" id="min_molec_weight"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="inspired_partial_pressure">inspired_partial_pressure</div>
+          <div class="col form-control alert-dark" role="alert" id="inspired_partial_pressure"></div>
+        </div>
+        <div class="row">
+          <div class="col form-control alert-info" role="alert" title="breathability">breathability</div>
+          <div class="col form-control alert-dark" role="alert" id="breathability"></div>
+        </div>
+        <div class="row">
           <div class="col" title="">
             <button type="button" class="btn btn-primary btn-lg btn-block" onclick="reload();" title="Click to relead">⟳ Reload</button>
           </div>
         </div>
-
-        
       </div>
     </fieldset>
     <script>
@@ -94,6 +184,29 @@
         document.getElementById("volume_density").textContent = volume_density(random_number(0, 10), random_number(0, 1000000));
         document.getElementById("period").textContent = period(random_number(0, 10), random_number(0, 5), random_number(5, 10));
         document.getElementById("day_length").textContent = "not tested";
+        document.getElementById("inclination").textContent = inclination(random_number(0, 10));
+        document.getElementById("inclination_with_fraction").textContent = inclination_with_fraction(random_number(0, 10));
+        document.getElementById("escape_vel").textContent = escape_vel(random_number(0, 10), random_number(0, 100000));
+        document.getElementById("rms_vel").textContent = rms_vel(random_number(0, 100), random_number(0, 100));
+        document.getElementById("molecule_limit").textContent = molecule_limit(random_number(0, 100), random_number(0, 10000), random_number(0, 100));
+        document.getElementById("acceleration").textContent = acceleration(random_number(0, 100), random_number(0, 10000));
+        document.getElementById("gravity").textContent = gravity(document.getElementById("acceleration").textContent);
+        document.getElementById("vol_inventory").textContent = "not tested";
+        document.getElementById("pressure").textContent = "not tested";
+        document.getElementById("boiling_point").textContent = "not tested";
+        document.getElementById("hydro_fraction").textContent = "not tested";
+        document.getElementById("cloud_fraction").textContent = "not tested";
+        document.getElementById("ice_fraction").textContent = "not tested";
+        document.getElementById("eff_temp").textContent = "not tested";
+        document.getElementById("est_temp").textContent = "not tested";
+        document.getElementById("grnhouse").textContent = "not tested";
+        document.getElementById("green_rise").textContent = "not tested";
+        document.getElementById("planet_albedo").textContent = "not tested";
+        document.getElementById("opacity").textContent = "not tested";
+        document.getElementById("gas_life").textContent = "not tested";
+        document.getElementById("min_molec_weight").textContent = "not tested";
+        document.getElementById("inspired_partial_pressure").textContent = "not tested";
+        document.getElementById("breathability").textContent = "not tested";
         console.log(document.getElementById("random_number").textContent);
         console.log(document.getElementById("about").textContent);
         console.log(document.getElementById("chaotic_random_eccentricity").textContent);
@@ -106,6 +219,29 @@
         console.log(document.getElementById("volume_density").textContent);
         console.log(document.getElementById("period").textContent);
         console.log(document.getElementById("day_length").textContent);
+        console.log(document.getElementById("inclination").textContent);
+        console.log(document.getElementById("inclination_with_fraction").textContent);
+        console.log(document.getElementById("escape_vel").textContent);
+        console.log(document.getElementById("rms_vel").textContent);
+        console.log(document.getElementById("molecule_limit").textContent);
+        console.log(document.getElementById("acceleration").textContent);
+        console.log(document.getElementById("gravity").textContent);
+        console.log(document.getElementById("vol_inventory").textContent);
+        console.log(document.getElementById("pressure").textContent);
+        console.log(document.getElementById("boiling_point").textContent);
+        console.log(document.getElementById("hydro_fraction").textContent);
+        console.log(document.getElementById("cloud_fraction").textContent);
+        console.log(document.getElementById("ice_fraction").textContent);
+        console.log(document.getElementById("eff_temp").textContent);
+        console.log(document.getElementById("est_temp").textContent);
+        console.log(document.getElementById("grnhouse").textContent);
+        console.log(document.getElementById("green_rise").textContent);
+        console.log(document.getElementById("planet_albedo").textContent);
+        console.log(document.getElementById("opacity").textContent);
+        console.log(document.getElementById("gas_life").textContent);
+        console.log(document.getElementById("min_molec_weight").textContent);
+        console.log(document.getElementById("inspired_partial_pressure").textContent);
+        console.log(document.getElementById("breathability").textContent);
       }
       reload();
     </script>
